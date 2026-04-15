@@ -1,22 +1,66 @@
 <script setup>
 import { useStore } from 'vuex'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-const emit = defineEmits(['filtrar'])
+const props = defineProps({
+  categoriaActiva: String,
+})
+
+const emit = defineEmits(['filtrar', 'buscar'])
 
 const store = useStore()
 const router = useRouter()
 
+// 🛒 carrito
 const totalCarrito = computed(() => store.getters.totalCantidadCarrito)
 
+// 👤 usuario
+const usuario = computed(() => store.state.usuario)
+
+// navegación
 const irInicio = () => router.push('/')
 const irCarrito = () => router.push('/carrito')
 
-// 👇 rutas filtros (solo en home)
-const filtrar = (cat) => {
+// filtros
+const filtrar = (categoria) => {
   router.push('/')
-  setTimeout(() => emit('filtrar', cat), 100)
+  setTimeout(() => emit('filtrar', categoria), 100)
+}
+
+// 🔍 buscador
+const buscar = (texto) => {
+  emit('buscar', texto)
+}
+
+// 🔐 LOGIN MODAL
+const mostrarLogin = ref(false)
+const email = ref('')
+const password = ref('')
+
+const abrirLogin = () => {
+  mostrarLogin.value = true
+}
+
+const cerrarLogin = () => {
+  mostrarLogin.value = false
+}
+
+const login = () => {
+  if (!email.value || !password.value) {
+    alert('Completa los campos')
+    return
+  }
+
+  store.commit('LOGIN', {
+    email: email.value,
+  })
+
+  cerrarLogin()
+}
+
+const logout = () => {
+  store.commit('LOGOUT')
 }
 </script>
 
@@ -26,15 +70,22 @@ const filtrar = (cat) => {
     <!-- LOGO -->
     <div class="logo-container" @click="irInicio">
       <img src="/logo.png" alt="logo" />
-      <h1>BeautyShop Leslie</h1>
     </div>
+
+    <!-- BUSCADOR -->
+    <input
+      type="text"
+      placeholder="Buscar producto..."
+      class="buscador"
+      @input="buscar($event.target.value)"
+    />
 
     <!-- NAV -->
     <nav>
-      <button @click="filtrar('todos')">Todos</button>
-      <button @click="filtrar('maquillaje')">Maquillaje</button>
-      <button @click="filtrar('skincare')">Skincare</button>
-      <button @click="filtrar('cabello')">Cabello</button>
+      <button :class="{ activo: categoriaActiva === 'todos' }" @click="filtrar('todos')">Todos</button>
+      <button :class="{ activo: categoriaActiva === 'maquillaje' }" @click="filtrar('maquillaje')">Maquillaje</button>
+      <button :class="{ activo: categoriaActiva === 'skincare' }" @click="filtrar('skincare')">Skincare</button>
+      <button :class="{ activo: categoriaActiva === 'cabello' }" @click="filtrar('cabello')">Cabello</button>
     </nav>
 
     <!-- CARRITO -->
@@ -45,56 +96,149 @@ const filtrar = (cat) => {
       </span>
     </div>
 
+    <!-- USUARIO -->
+    <div class="user-box">
+
+      <!-- logueado -->
+      <div v-if="usuario" class="user-info">
+        <span class="avatar">👤</span>
+        <span class="email">{{ usuario.email }}</span>
+        <button class="logout" @click="logout">Salir</button>
+      </div>
+
+      <!-- no logueado -->
+      <button v-else class="login-btn" @click="abrirLogin">
+        Ingresar
+      </button>
+
+    </div>
+
   </header>
+
+  <!-- 🔥 MODAL LOGIN -->
+  <div v-if="mostrarLogin" class="modal-overlay" @click.self="cerrarLogin">
+    <div class="modal">
+
+      <h3>Iniciar sesión</h3>
+
+      <input v-model="email" placeholder="Correo" />
+      <input v-model="password" type="password" placeholder="Contraseña" />
+
+      <button @click="login">Ingresar</button>
+
+      <span class="cerrar" @click="cerrarLogin">✖</span>
+    </div>
+  </div>
 </template>
 
 <style scoped>
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   background: linear-gradient(to right, #ffe4ec, #fff);
-  padding: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo-container {
+  padding: 1rem 2rem;
   display: flex;
   align-items: center;
-  gap: 10px;
-  cursor: pointer;
+  gap: 20px;
 }
 
+/* LOGO */
 .logo-container img {
-  width: 40px;
+  width: 80px;
 }
 
-h1 {
-  color: #d63384;
+/* BUSCADOR */
+.buscador {
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+/* NAV */
+nav {
+  display: flex;
+  gap: 10px;
 }
 
 nav button {
-  margin: 0 5px;
   border: none;
   padding: 0.5rem 1rem;
-  cursor: pointer;
-  background: white;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
+.activo {
+  background: #d63384;
+  color: white;
+}
+
+/* CARRITO */
 .carrito {
   position: relative;
-  cursor: pointer;
   font-size: 1.5rem;
 }
 
 .badge {
   position: absolute;
-  top: -8px;
-  right: -10px;
+  top: -5px;
+  right: -8px;
   background: #d63384;
   color: white;
   border-radius: 50%;
   padding: 2px 6px;
-  font-size: 0.8rem;
+}
+
+/* USER */
+.user-info {
+  display: flex;
+  gap: 8px;
+  background: white;
+  padding: 5px 10px;
+  border-radius: 10px;
+}
+
+.logout {
+  background: #d63384;
+  color: white;
+  border: none;
+  border-radius: 6px;
+}
+
+.login-btn {
+  background: #d63384;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+}
+
+/* MODAL */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cerrar {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  cursor: pointer;
 }
 </style>

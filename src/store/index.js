@@ -4,9 +4,22 @@ export default createStore({
   state: {
     carrito: JSON.parse(localStorage.getItem('carrito')) || [],
     favoritos: [],
+    usuario: JSON.parse(localStorage.getItem('usuario')) || null,
   },
 
   mutations: {
+    // 🔐 LOGIN
+    LOGIN(state, usuario) {
+      state.usuario = usuario
+      localStorage.setItem('usuario', JSON.stringify(usuario))
+    },
+
+    LOGOUT(state) {
+      state.usuario = null
+      localStorage.removeItem('usuario')
+    },
+
+    // 🛒 CARRITO
     AGREGAR_CARRITO(state, producto) {
       const existe = state.carrito.find((p) => p.id === producto.id)
 
@@ -45,6 +58,7 @@ export default createStore({
       localStorage.removeItem('carrito')
     },
 
+    // ❤️ FAVORITOS
     TOGGLE_FAVORITO(state, producto) {
       const existe = state.favoritos.find((p) => p.id === producto.id)
 
@@ -56,7 +70,6 @@ export default createStore({
     },
   },
 
-  // 🔥 SOLO ESTE GETTER
   getters: {
     esFavorito: (state) => (id) => {
       return state.favoritos.some((p) => p.id === id)
