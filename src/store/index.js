@@ -1,15 +1,20 @@
 import { createStore } from 'vuex'
+import productos from './modules/productos'
+import filtros from './modules/filtros'
 
 export default createStore({
+  modules: {
+    productos,
+    filtros,
+  },
+
   state: {
     carrito: JSON.parse(localStorage.getItem('carrito')) || [],
     favoritos: [],
     usuario: JSON.parse(localStorage.getItem('usuario')) || null,
-
-    // 🔥 AQUÍ VA
     animarCarrito: false,
-
     toasts: [],
+    toast: '',
   },
 
   mutations: {
@@ -41,7 +46,6 @@ export default createStore({
       localStorage.setItem('carrito', JSON.stringify(state.carrito))
     },
 
-    // 🔥 ANIMACIÓN
     ACTIVAR_ANIMACION_CARRITO(state) {
       state.animarCarrito = true
 
@@ -83,6 +87,7 @@ export default createStore({
       }
     },
 
+    // 🔔 TOAST SIMPLE
     MOSTRAR_TOAST(state, mensaje) {
       state.toast = mensaje
 
@@ -91,6 +96,7 @@ export default createStore({
       }, 2500)
     },
 
+    // 🔔 MULTI TOAST
     AGREGAR_TOAST(state, mensaje) {
       const id = Date.now()
 
