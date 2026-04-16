@@ -10,24 +10,39 @@ const props = defineProps({
 const store = useStore()
 const router = useRouter()
 
+// ⭐ rating
 const rating = ref(Math.floor(Math.random() * 5) + 1)
 
-const esFavorito = computed(() =>
-  store.getters.esFavorito(props.producto.id)
-)
+// ❤️ favorito
+const esFavorito = computed(() => store.getters.esFavorito(props.producto.id))
 
+// 🛒 animación local botón
+const animando = ref(false)
+
+// acciones
 const toggleFavorito = () => {
   store.commit('TOGGLE_FAVORITO', props.producto)
-}
-
-const agregarCarrito = () => {
-  store.commit('AGREGAR_CARRITO', props.producto)
 }
 
 const verProducto = () => {
   router.push(`/producto/${props.producto.id}`)
 }
 
+const agregarCarrito = () => {
+  store.commit('AGREGAR_CARRITO', props.producto)
+  store.commit('AGREGAR_TOAST', 'Producto agregado al carrito 💖')
+
+  // 🔥 animación global carrito
+  store.commit('ACTIVAR_ANIMACION_CARRITO')
+
+  // ✨ animación botón
+  animando.value = true
+  setTimeout(() => {
+    animando.value = false
+  }, 300)
+}
+
+// CLP
 const formatoCLP = (valor) => {
   return new Intl.NumberFormat('es-CL', {
     style: 'currency',
@@ -38,7 +53,6 @@ const formatoCLP = (valor) => {
 
 <template>
   <div class="card">
-
     <!-- ❤️ favorito -->
     <span class="fav" @click="toggleFavorito">
       {{ esFavorito ? '❤️' : '🤍' }}
@@ -49,121 +63,95 @@ const formatoCLP = (valor) => {
       <img :src="producto.imagen" alt="producto" />
     </div>
 
-    <!-- info -->
-    <div class="info">
-      <h3>{{ producto.nombre }}</h3>
-      <h4 class="marca">{{ producto.marca }}</h4>
+    <h3>{{ producto.nombre }}</h3>
+    <h4 class="marca">{{ producto.marca }}</h4>
 
-      <!-- ⭐ rating -->
-      <div class="rating">
-        <span v-for="n in 5" :key="n">
-          {{ n <= rating ? '⭐' : '☆' }}
-        </span>
-      </div>
-
-      <p class="precio">{{ formatoCLP(producto.precio) }}</p>
+    <!-- ⭐ rating -->
+    <div class="rating">
+      <span v-for="n in 5" :key="n">
+        {{ n <= rating ? '⭐' : '☆' }}
+      </span>
     </div>
 
-    <!-- acciones (aparecen en hover) -->
+    <p class="precio">{{ formatoCLP(producto.precio) }}</p>
+
+    <p class="color" v-if="producto.color && producto.color !== '—'">Color: {{ producto.color }}</p>
+
+    <p class="desc">{{ producto.descripcion }}</p>
+
+    <!-- botones -->
     <div class="acciones">
       <button class="btn ver" @click="verProducto">Ver</button>
-      <button class="btn carrito" @click="agregarCarrito">🛒</button>
-    </div>
 
+      <button class="btn carrito" :class="{ animar: animando }" @click="agregarCarrito">🛒</button>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .card {
   position: relative;
-  border-radius: 16px;
+  border: 1px solid #eee;
+  padding: 1rem;
+  border-radius: 12px;
   background: white;
-  overflow: hidden;
+  text-align: center;
   transition: 0.3s;
-  cursor: pointer;
 }
 
 .card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
-/* imagen */
+.fav {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+}
+
 .img-container {
+  width: 100%;
   height: 220px;
-  background: #f8f8f8;
   display: flex;
-  align-items: center;
   justify-content: center;
-  overflow: hidden;
+  align-items: center;
+  background: #f8f8f8;
+  border-radius: 10px;
 }
 
 .img-container img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  transition: 0.4s;
-}
-
-/* zoom imagen */
-.card:hover img {
-  transform: scale(1.1);
-}
-
-/* info */
-.info {
-  padding: 1rem;
-  text-align: center;
 }
 
 .marca {
   color: #888;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
 
 .rating {
   color: #ffc107;
-  margin: 5px 0;
 }
 
 .precio {
   font-weight: bold;
-  font-size: 1.1rem;
 }
 
-/* ❤️ favorito */
-.fav {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 2;
-  font-size: 1.2rem;
-}
-
-/* botones hover */
 .acciones {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
   display: flex;
   justify-content: center;
   gap: 10px;
-  padding: 10px;
-  background: rgba(255,255,255,0.9);
-  transform: translateY(100%);
-  transition: 0.3s;
-}
-
-.card:hover .acciones {
-  transform: translateY(0);
+  margin-top: 10px;
 }
 
 .btn {
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 10px;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: 500;
 }
 
 .ver {
@@ -174,5 +162,32 @@ const formatoCLP = (valor) => {
 .carrito {
   background: #333;
   color: white;
+  transition: transform 0.2s;
+}
+
+.carrito:hover {
+  transform: scale(1.1);
+}
+
+/* 🔥 animación botón */
+.animar {
+  animation: pop 0.3s ease;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3) rotate(-10deg);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.desc {
+  font-size: 0.85rem;
+  color: #666;
 }
 </style>

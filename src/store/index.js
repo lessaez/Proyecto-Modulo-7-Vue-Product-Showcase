@@ -5,6 +5,11 @@ export default createStore({
     carrito: JSON.parse(localStorage.getItem('carrito')) || [],
     favoritos: [],
     usuario: JSON.parse(localStorage.getItem('usuario')) || null,
+
+    // 🔥 AQUÍ VA
+    animarCarrito: false,
+
+    toasts: [],
   },
 
   mutations: {
@@ -34,6 +39,15 @@ export default createStore({
       }
 
       localStorage.setItem('carrito', JSON.stringify(state.carrito))
+    },
+
+    // 🔥 ANIMACIÓN
+    ACTIVAR_ANIMACION_CARRITO(state) {
+      state.animarCarrito = true
+
+      setTimeout(() => {
+        state.animarCarrito = false
+      }, 300)
     },
 
     ELIMINAR_DEL_CARRITO(state, id) {
@@ -67,6 +81,27 @@ export default createStore({
       } else {
         state.favoritos.push(producto)
       }
+    },
+
+    MOSTRAR_TOAST(state, mensaje) {
+      state.toast = mensaje
+
+      setTimeout(() => {
+        state.toast = ''
+      }, 2500)
+    },
+
+    AGREGAR_TOAST(state, mensaje) {
+      const id = Date.now()
+
+      state.toasts.push({
+        id,
+        mensaje,
+      })
+
+      setTimeout(() => {
+        state.toasts = state.toasts.filter((t) => t.id !== id)
+      }, 2500)
     },
   },
 

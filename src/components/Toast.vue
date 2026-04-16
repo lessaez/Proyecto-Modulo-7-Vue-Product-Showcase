@@ -1,37 +1,66 @@
 <script setup>
 import { useStore } from 'vuex'
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 
 const store = useStore()
+const toasts = computed(() => store.state.toasts)
+const cantidad = ref(1)
 
-const mensaje = computed(() => store.state.notificacion)
+const aumentarCantidad = () => {
+  cantidad.value++
+}
 
-watch(mensaje, (nuevo) => {
-  if (nuevo) {
-    setTimeout(() => {
-      store.commit('OCULTAR_NOTIFICACION')
-    }, 2500)
+const disminuirCantidad = () => {
+  if (cantidad.value > 1) {
+    cantidad.value--
   }
-})
+}
+
+const agregarCarrito = () => {
+  store.commit('AGREGAR_CARRITO', {
+    ...props.producto,
+    cantidad: cantidad.value, // 🔥 clave
+  })
+
+  store.commit('ACTIVAR_ANIMACION_CARRITO')
+  store.commit('AGREGAR_TOAST', `Agregaste ${cantidad.value} producto(s) 💖`)
+
+  animando.value = true
+  setTimeout(() => (animando.value = false), 300)
+
+  cantidad.value = 1 // reset
+}
 </script>
 
 <template>
-  <transition name="toast">
-    <div v-if="mensaje" class="toast">
-      <span class="icon">🛒</span>
-      <span>{{ mensaje }}</span>
+  <div class="toast-container">
+    <transition-group name="toast">
+      <div 
+        v-for="t in toasts" 
+        :key="t.id" 
+        class="toast"
+      >
+        <span class="icon">🛒</span>
+        <span>{{ t.mensaje }}</span>
 
-      <!-- barra progreso -->
-      <div class="barra"></div>
-    </div>
-  </transition>
+        <div class="barra"></div>
+      </div>
+    </transition-group>
+  </div>
 </template>
 
 <style scoped>
-.toast {
+.toast-container {
   position: fixed;
   top: 20px;
   right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+}
+
+.toast {
   background: #d63384;
   color: white;
   padding: 0.9rem 1.2rem;
@@ -41,14 +70,14 @@ watch(mensaje, (nuevo) => {
   align-items: center;
   gap: 8px;
   overflow: hidden;
-  z-index: 999;
+  min-width: 220px;
 }
 
 .icon {
   font-size: 1.2rem;
 }
 
-/* 🎬 animaciones */
+/* animaciones */
 .toast-enter-active,
 .toast-leave-active {
   transition: all 0.3s ease;
@@ -56,15 +85,19 @@ watch(mensaje, (nuevo) => {
 
 .toast-enter-from {
   opacity: 0;
-  transform: translateY(-20px);
+  transform: translateX(30px);
 }
 
 .toast-leave-to {
   opacity: 0;
-  transform: translateY(-20px);
+  transform: translateX(30px);
 }
 
-/* ⏳ barra de tiempo */
+.toast-move {
+  transition: transform 0.3s ease;
+}
+
+/* barra */
 .barra {
   position: absolute;
   bottom: 0;
@@ -76,22 +109,7 @@ watch(mensaje, (nuevo) => {
 }
 
 @keyframes progreso {
-  from {
-    width: 100%;
-  }
-  to {
-    width: 0%;
-  }
-}
-
-@keyframes aparecer {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { width: 100%; }
+  to { width: 0%; }
 }
 </style>

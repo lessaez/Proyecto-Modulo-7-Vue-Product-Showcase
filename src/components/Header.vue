@@ -1,6 +1,6 @@
 <script setup>
 import { useStore } from 'vuex'
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -14,6 +14,7 @@ const router = useRouter()
 
 // 🛒 carrito
 const totalCarrito = computed(() => store.getters.totalCantidadCarrito)
+const animarCarrito = computed(() => store.state.animarCarrito)
 
 // 👤 usuario
 const usuario = computed(() => store.state.usuario)
@@ -37,6 +38,14 @@ const buscar = (texto) => {
 const mostrarLogin = ref(false)
 const email = ref('')
 const password = ref('')
+const error = ref('')
+
+// 🔥 REF DEL CARRITO (CLAVE)
+const carritoRef = ref(null)
+
+onMounted(() => {
+  window.carritoElemento = carritoRef.value
+})
 
 const abrirLogin = () => {
   mostrarLogin.value = true
@@ -44,11 +53,20 @@ const abrirLogin = () => {
 
 const cerrarLogin = () => {
   mostrarLogin.value = false
+  error.value = ''
 }
 
+// login
 const login = () => {
+  error.value = ''
+
   if (!email.value || !password.value) {
-    alert('Completa los campos')
+    error.value = 'Completa todos los campos'
+    return
+  }
+
+  if (!email.value.includes('@')) {
+    error.value = 'Correo inválido'
     return
   }
 
@@ -57,6 +75,9 @@ const login = () => {
   })
 
   cerrarLogin()
+
+  email.value = ''
+  password.value = ''
 }
 
 const logout = () => {
@@ -88,8 +109,13 @@ const logout = () => {
       <button :class="{ activo: categoriaActiva === 'cabello' }" @click="filtrar('cabello')">Cabello</button>
     </nav>
 
-    <!-- CARRITO -->
-    <div class="carrito" @click="irCarrito">
+    <!-- 🛒 CARRITO CON REF + ANIMACIÓN -->
+    <div 
+      class="carrito"
+      ref="carritoRef"
+      :class="{ bounce: animarCarrito }"
+      @click="irCarrito"
+    >
       🛒
       <span v-if="totalCarrito > 0" class="badge">
         {{ totalCarrito }}
@@ -99,14 +125,12 @@ const logout = () => {
     <!-- USUARIO -->
     <div class="user-box">
 
-      <!-- logueado -->
       <div v-if="usuario" class="user-info">
         <span class="avatar">👤</span>
         <span class="email">{{ usuario.email }}</span>
         <button class="logout" @click="logout">Salir</button>
       </div>
 
-      <!-- no logueado -->
       <button v-else class="login-btn" @click="abrirLogin">
         Ingresar
       </button>
@@ -115,7 +139,7 @@ const logout = () => {
 
   </header>
 
-  <!-- 🔥 MODAL LOGIN -->
+  <!-- 🔐 MODAL -->
   <div v-if="mostrarLogin" class="modal-overlay" @click.self="cerrarLogin">
     <div class="modal">
 
@@ -123,6 +147,8 @@ const logout = () => {
 
       <input v-model="email" placeholder="Correo" />
       <input v-model="password" type="password" placeholder="Contraseña" />
+
+      <p v-if="error" class="error">{{ error }}</p>
 
       <button @click="login">Ingresar</button>
 
@@ -143,19 +169,16 @@ const logout = () => {
   gap: 20px;
 }
 
-/* LOGO */
 .logo-container img {
   width: 80px;
 }
 
-/* BUSCADOR */
 .buscador {
   padding: 0.5rem 1rem;
   border-radius: 10px;
   border: 1px solid #ccc;
 }
 
-/* NAV */
 nav {
   display: flex;
   gap: 10px;
@@ -172,12 +195,27 @@ nav button {
   color: white;
 }
 
-/* CARRITO */
+/* 🛒 */
 .carrito {
   position: relative;
   font-size: 1.5rem;
+  cursor: pointer;
 }
 
+/* 🔥 ANIMACIÓN REBOTE */
+.bounce {
+  animation: bounce 0.4s ease;
+}
+
+@keyframes bounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.3); }
+  50% { transform: scale(0.9); }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* badge */
 .badge {
   position: absolute;
   top: -5px;
@@ -212,7 +250,7 @@ nav button {
   border-radius: 10px;
 }
 
-/* MODAL */
+/* modal */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -223,6 +261,7 @@ nav button {
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 9999;
 }
 
 .modal {
@@ -233,6 +272,13 @@ nav button {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  position: relative;
+}
+
+.error {
+  color: red;
+  font-size: 0.8rem;
+  text-align: center;
 }
 
 .cerrar {

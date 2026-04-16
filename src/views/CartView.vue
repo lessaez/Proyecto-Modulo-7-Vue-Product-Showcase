@@ -14,7 +14,7 @@ const total = computed(() => store.getters.totalPrecio)
 const eliminar = (id) => store.commit('ELIMINAR_DEL_CARRITO', id)
 const aumentar = (id) => store.commit('AUMENTAR_CANTIDAD', id)
 const disminuir = (id) => store.commit('DISMINUIR_CANTIDAD', id)
-const vaciar = () => store.commit('LIMPIAR_CARRITO')
+const vaciar = () => store.commit('VACIAR_CARRITO')
 
 const volver = () => router.back()
 const irCheckout = () => router.push('/checkout')
@@ -32,7 +32,6 @@ const formatoCLP = (valor) => {
   <Header />
 
   <div class="carrito">
-    <!-- volver -->
     <button class="volver" @click="volver">⬅ Volver</button>
 
     <h1>🛒 Tu Carrito</h1>
@@ -42,34 +41,33 @@ const formatoCLP = (valor) => {
     </div>
 
     <div v-else>
-      <!-- lista -->
-      <div class="item" v-for="p in carrito" :key="p.id">
-        
-        <!-- imagen -->
-        <img :src="p.imagen" />
 
-        <!-- info -->
-        <div class="info">
-          <h3>{{ p.nombre }}</h3>
+      <!-- 🔥 ANIMACIÓN -->
+      <transition-group name="cart" tag="div">
+        <div class="item" v-for="p in carrito" :key="p.id">
+          
+          <img :src="p.imagen" />
 
-          <!-- cantidad -->
-          <div class="cantidad">
-            <button @click="disminuir(p.id)">➖</button>
-            <span>{{ p.cantidad }}</span>
-            <button @click="aumentar(p.id)">➕</button>
+          <div class="info">
+            <h3>{{ p.nombre }}</h3>
+
+            <!-- cantidad -->
+            <div class="cantidad">
+              <button @click="disminuir(p.id)">➖</button>
+              <span>{{ p.cantidad }}</span>
+              <button @click="aumentar(p.id)">➕</button>
+            </div>
+
+            <p class="precio">
+              {{ formatoCLP(p.precio * p.cantidad) }}
+            </p>
           </div>
 
-          <!-- subtotal -->
-          <p class="precio">
-            {{ formatoCLP(p.precio * p.cantidad) }}
-          </p>
+          <button class="eliminar" @click="eliminar(p.id)">❌</button>
         </div>
+      </transition-group>
 
-        <!-- eliminar -->
-        <button class="eliminar" @click="eliminar(p.id)">❌</button>
-      </div>
-
-      <!-- total -->
+      <!-- resumen -->
       <div class="resumen">
         <h2>Total: {{ formatoCLP(total) }}</h2>
 
@@ -88,6 +86,8 @@ const formatoCLP = (valor) => {
 <style scoped>
 .carrito {
   padding: 2rem;
+  max-width: 900px;
+  margin: auto;
 }
 
 /* volver */
@@ -100,27 +100,25 @@ const formatoCLP = (valor) => {
   cursor: pointer;
 }
 
-/* vacío */
-.vacio {
-  margin-top: 20px;
-}
-
 /* item */
 .item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  border-bottom: 1px solid #ddd;
-  padding: 15px 0;
+  gap: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
 /* imagen */
 img {
-  width: 70px;
-  height: 70px;
+  width: 90px;
+  height: 90px;
   object-fit: contain;
   background: #f8f8f8;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 5px;
 }
 
@@ -134,15 +132,21 @@ img {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 5px 0;
+  margin: 8px 0;
 }
 
 .cantidad button {
   border: none;
-  padding: 4px 8px;
-  background: #ddd;
-  border-radius: 5px;
+  background: #eee;
+  padding: 5px 10px;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 1rem;
+  transition: transform 0.15s ease;
+}
+
+.cantidad button:active {
+  transform: scale(0.8);
 }
 
 /* precio */
@@ -155,9 +159,15 @@ img {
   background: #ff4d4f;
   color: white;
   border: none;
-  padding: 6px 10px;
-  border-radius: 6px;
+  padding: 8px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s;
+}
+
+.eliminar:hover {
+  transform: scale(1.1);
+  background: #ff0000;
 }
 
 /* resumen */
@@ -165,15 +175,13 @@ img {
   margin-top: 20px;
 }
 
-/* botones */
 .checkout {
   margin-top: 10px;
   background: #d63384;
   color: white;
   border: none;
-  padding: 0.8rem 1.2rem;
+  padding: 0.8rem;
   border-radius: 10px;
-  cursor: pointer;
   width: 100%;
 }
 
@@ -182,9 +190,32 @@ img {
   background: black;
   color: white;
   border: none;
-  padding: 0.6rem 1rem;
+  padding: 0.6rem;
   border-radius: 8px;
-  cursor: pointer;
   width: 100%;
+}
+
+/* 🔥 ANIMACIONES */
+.cart-enter-active {
+  transition: all 0.4s ease;
+}
+
+.cart-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.cart-leave-active {
+  transition: all 0.3s ease;
+  position: absolute;
+}
+
+.cart-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.cart-move {
+  transition: transform 0.3s ease;
 }
 </style>
