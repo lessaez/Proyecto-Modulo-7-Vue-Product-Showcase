@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { productos } from '../../data/productos' // 👈 IMPORTANTE
 
 export default {
   namespaced: true,
@@ -24,11 +25,22 @@ export default {
   actions: {
     async fetchProductos({ commit }) {
       commit('SET_CARGANDO', true)
+
       try {
         const res = await axios.get('https://fakestoreapi.com/products')
-        commit('SET_PRODUCTOS', res.data)
+
+        // 🔥 si API responde bien
+        if (res.data && res.data.length > 0) {
+          commit('SET_PRODUCTOS', res.data)
+        } else {
+          commit('SET_PRODUCTOS', productos)
+        }
       } catch (error) {
-        commit('SET_ERROR', 'Error al cargar productos')
+        console.error(error)
+
+        // 🔥 fallback local (CLAVE)
+        commit('SET_PRODUCTOS', productos)
+        commit('SET_ERROR', 'Usando productos locales')
       } finally {
         commit('SET_CARGANDO', false)
       }
@@ -37,5 +49,15 @@ export default {
 
   getters: {
     todosProductos: (state) => state.productos,
+
+    productosFiltrados: (state, getters, rootState) => {
+      const categoria = rootState.filtros?.categoria || 'all'
+
+      if (categoria === 'all') {
+        return state.productos
+      }
+
+      return state.productos.filter((p) => p.category === categoria || p.categoria === categoria)
+    },
   },
 }

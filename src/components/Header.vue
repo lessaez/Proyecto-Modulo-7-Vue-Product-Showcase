@@ -1,7 +1,7 @@
 <script setup>
-import { useStore } from 'vuex'
-import { computed, ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useStore } from 'vuex'
 
 const props = defineProps({
   categoriaActiva: String,
