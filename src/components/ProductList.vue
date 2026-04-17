@@ -1,125 +1,111 @@
 <script setup>
-import ProductCard from './ProductCard.vue'
+import { computed } from 'vue'
 import { useStore } from 'vuex'
-import { computed, onMounted } from 'vue'
+import ProductCard from './ProductCard.vue'
+
+const props = defineProps({
+  productos: {
+    type: Array,
+    default: null,
+  },
+  mostrarFiltro: {
+    type: Boolean,
+    default: true,
+  },
+})
 
 const store = useStore()
 
-// 🔥 PRODUCTOS FILTRADOS DESDE VUEX
-const productos = computed(() =>
-  store.getters['productos/productosFiltrados']
+const listaProductos = computed(() =>
+  Array.isArray(props.productos) ? props.productos : store.getters['productos/productosFiltrados']
 )
 
-// 🧠 CATEGORÍAS DINÁMICAS DESDE LOS PRODUCTOS
 const categorias = computed(() => {
   const productos = store.getters['productos/todosProductos']
-
-  const unicas = new Set(productos.map(p => p.category))
+  const unicas = new Set(productos.map((producto) => producto.categoria).filter(Boolean))
   return ['all', ...unicas]
 })
 
-// 🎛️ CAMBIAR CATEGORÍA
-const cambiarCategoria = (e) => {
-  store.commit('filtros/SET_CATEGORIA', e.target.value)
-}
-
-const cargando = computed(() =>
-  store.state.productos.cargando
-)
-
-const error = computed(() =>
-  store.state.productos.error
-)
-// 🚀 CARGAR PRODUCTOS
-onMounted(() => {
-  store.dispatch('productos/fetchProductos')
+const categoriaSeleccionada = computed({
+  get: () => store.state.filtros.categoria,
+  set: (valor) => store.commit('filtros/SET_CATEGORIA', valor),
 })
+
+const cargando = computed(() => store.state.productos.cargando)
+const error = computed(() => store.state.productos.error)
 </script>
 
 <template>
-  <!-- 🎛️ FILTRO -->
-  <select @change="cambiarCategoria" class="filtro">
-    <option v-for="cat in categorias" :key="cat" :value="cat">
-      {{ cat }}
-    </option>
-  </select>
+  <div class="product-list">
+    <div v-if="mostrarFiltro" class="toolbar">
+      <el-select v-model="categoriaSeleccionada" class="filtro" placeholder="Filtrar por categoría">
+        <el-option v-for="cat in categorias" :key="cat" :label="cat" :value="cat" />
+      </el-select>
+    </div>
 
-  <!-- ⏳ LOADING -->
-  <p v-if="cargando" class="mensaje">Cargando productos...</p>
+    <el-alert v-if="error" :closable="false" show-icon type="warning" :title="error" />
 
-  <!-- ❌ ERROR -->
-  <p v-else-if="error" class="error">{{ error }}</p>
+    <div v-if="cargando" class="skeleton-grid">
+      <el-skeleton v-for="n in 6" :key="n" animated>
+        <template #template>
+          <el-skeleton-item variant="image" style="width: 100%; height: 220px" />
+          <div style="padding: 14px 0">
+            <el-skeleton-item variant="h3" style="width: 70%" />
+            <el-skeleton-item variant="text" style="width: 50%; margin-top: 12px" />
+            <el-skeleton-item variant="text" style="width: 90%; margin-top: 12px" />
+          </div>
+        </template>
+      </el-skeleton>
+    </div>
 
-  <!-- 📭 SIN PRODUCTOS -->
-  <p v-else-if="productos.length === 0" class="mensaje">
-    No hay productos en esta categoría
-  </p>
-
-  <!-- 🛍️ PRODUCTOS -->
-  <transition-group
-    v-else
-    name="fade"
-    tag="div"
-    class="grid"
-  >
-    <ProductCard 
-      v-for="producto in productos" 
-      :key="producto.id" 
-      :producto="producto" 
+    <el-empty
+      v-else-if="listaProductos.length === 0"
+      description="No hay productos para mostrar con esos filtros."
     />
-  </transition-group>
+
+    <transition-group v-else name="fade" tag="div" class="grid">
+      <ProductCard v-for="producto in listaProductos" :key="producto.id" :producto="producto" />
+    </transition-group>
+  </div>
 </template>
 
 <style scoped>
-.grid {
+.product-list {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  gap: 20px;
 }
 
-/* filtro */
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .filtro {
-  margin-bottom: 15px;
-  padding: 8px;
-  border-radius: 8px;
+  width: min(100%, 260px);
 }
 
-/* entrada */
+.grid,
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
 .fade-enter-active {
-  transition: all 0.4s ease;
+  transition: all 0.35s ease;
 }
 
 .fade-enter-from {
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateY(16px);
 }
 
-/* salida */
 .fade-leave-active {
-  transition: all 0.3s ease;
-  position: absolute;
+  transition: all 0.25s ease;
 }
 
 .fade-leave-to {
   opacity: 0;
-  transform: scale(0.9);
-}
-
-/* movimiento */
-.fade-move {
-  transition: transform 0.1s ease;
-}
-
-.mensaje {
-  text-align: center;
-  font-size: 18px;
-  margin-top: 20px;
-}
-
-.error {
-  text-align: center;
-  color: red;
-  font-weight: bold;
-  margin-top: 20px;
+  transform: scale(0.96);
 }
 </style>

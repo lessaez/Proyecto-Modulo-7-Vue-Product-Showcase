@@ -1,24 +1,38 @@
 import { createStore } from 'vuex'
-import productos from './modules/productos'
 import filtros from './modules/filtros'
+import favoritos from './modules/favoritos'
+import productos from './modules/productos'
+
+const leerJSON = (key, fallback) => {
+  try {
+    const valor = localStorage.getItem(key)
+    return valor ? JSON.parse(valor) : fallback
+  } catch {
+    return fallback
+  }
+}
 
 export default createStore({
   modules: {
     productos,
     filtros,
+    favoritos,
   },
 
   state: {
-    carrito: JSON.parse(localStorage.getItem('carrito')) || [],
-    favoritos: [],
-    usuario: JSON.parse(localStorage.getItem('usuario')) || null,
+    carrito: leerJSON('carrito', []),
+    usuario: leerJSON('usuario', null),
     animarCarrito: false,
     toasts: [],
-    toast: '',
+    temaOscuro: leerJSON('temaOscuro', false),
   },
 
   mutations: {
-    // 🔐 LOGIN
+    SET_TEMA_OSCURO(state, valor) {
+      state.temaOscuro = Boolean(valor)
+      localStorage.setItem('temaOscuro', JSON.stringify(state.temaOscuro))
+    },
+
     LOGIN(state, usuario) {
       state.usuario = usuario
       localStorage.setItem('usuario', JSON.stringify(usuario))
@@ -29,12 +43,11 @@ export default createStore({
       localStorage.removeItem('usuario')
     },
 
-    // 🛒 CARRITO
     AGREGAR_CARRITO(state, producto) {
-      const existe = state.carrito.find((p) => p.id === producto.id)
+      const existe = state.carrito.find((item) => String(item.id) === String(producto.id))
 
       if (existe) {
-        existe.cantidad++
+        existe.cantidad += 1
       } else {
         state.carrito.push({
           ...producto,
@@ -55,20 +68,26 @@ export default createStore({
     },
 
     ELIMINAR_DEL_CARRITO(state, id) {
-      state.carrito = state.carrito.filter((p) => p.id !== id)
+      state.carrito = state.carrito.filter((item) => String(item.id) !== String(id))
       localStorage.setItem('carrito', JSON.stringify(state.carrito))
     },
 
     AUMENTAR_CANTIDAD(state, id) {
-      const producto = state.carrito.find((p) => p.id === id)
-      if (producto) producto.cantidad++
-      localStorage.setItem('carrito', JSON.stringify(state.carrito))
+      const producto = state.carrito.find((item) => String(item.id) === String(id))
+
+      if (producto) {
+        producto.cantidad += 1
+        localStorage.setItem('carrito', JSON.stringify(state.carrito))
+      }
     },
 
     DISMINUIR_CANTIDAD(state, id) {
-      const producto = state.carrito.find((p) => p.id === id)
-      if (producto && producto.cantidad > 1) producto.cantidad--
-      localStorage.setItem('carrito', JSON.stringify(state.carrito))
+      const producto = state.carrito.find((item) => String(item.id) === String(id))
+
+      if (producto && producto.cantidad > 1) {
+        producto.cantidad -= 1
+        localStorage.setItem('carrito', JSON.stringify(state.carrito))
+      }
     },
 
     VACIAR_CARRITO(state) {
@@ -76,46 +95,18 @@ export default createStore({
       localStorage.removeItem('carrito')
     },
 
-    // ❤️ FAVORITOS
-    TOGGLE_FAVORITO(state, producto) {
-      const existe = state.favoritos.find((p) => p.id === producto.id)
-
-      if (existe) {
-        state.favoritos = state.favoritos.filter((p) => p.id !== producto.id)
-      } else {
-        state.favoritos.push(producto)
-      }
-    },
-
-    // 🔔 TOAST SIMPLE
-    MOSTRAR_TOAST(state, mensaje) {
-      state.toast = mensaje
-
-      setTimeout(() => {
-        state.toast = ''
-      }, 2500)
-    },
-
-    // 🔔 MULTI TOAST
     AGREGAR_TOAST(state, mensaje) {
       const id = Date.now()
 
-      state.toasts.push({
-        id,
-        mensaje,
-      })
+      state.toasts.push({ id, mensaje })
 
       setTimeout(() => {
-        state.toasts = state.toasts.filter((t) => t.id !== id)
+        state.toasts = state.toasts.filter((toast) => toast.id !== id)
       }, 2500)
     },
   },
 
   getters: {
-    esFavorito: (state) => (id) => {
-      return state.favoritos.some((p) => p.id === id)
-    },
-
     totalPrecio: (state) => {
       return state.carrito.reduce((acc, item) => {
         const precio = Number(item.precio) || 0

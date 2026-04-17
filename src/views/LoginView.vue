@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 
@@ -15,11 +15,7 @@ const login = () => {
     return
   }
 
-  const usuario = {
-    email: email.value
-  }
-
-  store.commit('LOGIN', usuario)
+  store.commit('LOGIN', { email: email.value })
   router.push('/')
 }
 </script>
