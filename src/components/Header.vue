@@ -76,7 +76,7 @@ const logout = () => {
       <button class="logo" @click="irInicio">
         <img src="/logo.png" alt="Beauty Shop" />
         <div class="logo-copy">
-          <span class="eyebrow"></span>
+          <span class="eyebrow">Vue Product Showcase</span>
         </div>
       </button>
 
